@@ -6,7 +6,7 @@ defmodule Semigraph.Query do
   with compilation to either ETS operations or matrix algebra.
   """
 
-  alias Semigraph.{Graph, Node, Edge}
+  alias Semigraph.{Graph, Node, Storage}
 
   @type query_ast :: term()
   @type query_result :: [map()]
@@ -113,19 +113,109 @@ defmodule Semigraph.Query do
   Simple path traversal without full query parsing.
   """
   @spec traverse(Graph.t(), Node.id(), keyword()) :: [Node.t()]
-  def traverse(_graph, _start_node_id, _opts \\ []) do
-    # TODO: Implement BFS/DFS traversal with filters
-    # Options: :max_depth, :direction, :edge_types, :node_filter
-    :not_implemented
+  def traverse(%Graph{storage: storage} = _graph, start_node_id, opts \\ []) do
+    max_depth = Keyword.get(opts, :max_depth, 3)
+    direction = Keyword.get(opts, :direction, :both)  # :in, :out, :both
+
+    traverse_recursive(storage, [start_node_id], MapSet.new([start_node_id]), 0, max_depth, direction)
+    |> Enum.map(fn node_id ->
+      case Storage.get_node(storage, node_id) do
+        {:ok, node} -> node
+        {:error, _} -> nil
+      end
+    end)
+    |> Enum.filter(& &1)
+  end
+
+  defp traverse_recursive(_storage, [], _visited, _depth, _max_depth, _direction) do
+    []
+  end
+
+  defp traverse_recursive(_storage, _current_nodes, visited, depth, max_depth, _direction) when depth >= max_depth do
+    MapSet.to_list(visited)
+  end
+
+  defp traverse_recursive(storage, current_nodes, visited, depth, max_depth, direction) do
+    next_nodes =
+      current_nodes
+      |> Enum.flat_map(fn node_id ->
+        Storage.get_edges_for_node(storage, node_id)
+        |> Enum.flat_map(fn edge ->
+          case direction do
+            :out when edge.from_node_id == node_id -> [edge.to_node_id]
+            :in when edge.to_node_id == node_id -> [edge.from_node_id]
+            :both -> [edge.from_node_id, edge.to_node_id]
+            _ -> []
+          end
+        end)
+      end)
+      |> Enum.uniq()
+      |> Enum.reject(&MapSet.member?(visited, &1))
+
+    new_visited = Enum.reduce(next_nodes, visited, &MapSet.put(&2, &1))
+
+    current_result = MapSet.to_list(visited)
+    next_result = traverse_recursive(storage, next_nodes, new_visited, depth + 1, max_depth, direction)
+
+    (current_result ++ next_result) |> Enum.uniq()
   end
 
   @doc """
   Find shortest path between two nodes.
   """
   @spec shortest_path(Graph.t(), Node.id(), Node.id(), keyword()) :: {:ok, [Node.t()]} | {:error, :no_path}
-  def shortest_path(_graph, _from_id, _to_id, _opts \\ []) do
-    # TODO: Implement shortest path using BFS or matrix operations
-    :not_implemented
+  def shortest_path(%Graph{storage: storage} = _graph, from_id, to_id, _opts \\ []) do
+    case bfs_path(storage, from_id, to_id) do
+      {:ok, path} ->
+        nodes = Enum.map(path, fn node_id ->
+          {:ok, node} = Storage.get_node(storage, node_id)
+          node
+        end)
+        {:ok, nodes}
+
+      {:error, :no_path} ->
+        {:error, :no_path}
+    end
+  end
+
+  defp bfs_path(_storage, from_id, to_id) when from_id == to_id do
+    {:ok, [from_id]}
+  end
+
+  defp bfs_path(storage, from_id, to_id) do
+    queue = [{from_id, [from_id]}]
+    visited = MapSet.new([from_id])
+
+    bfs_search(storage, queue, visited, to_id)
+  end
+
+  defp bfs_search(_storage, [], _visited, _target) do
+    {:error, :no_path}
+  end
+
+  defp bfs_search(storage, [{current_id, path} | rest], visited, target) do
+    if current_id == target do
+      {:ok, Enum.reverse(path)}
+    else
+      neighbors = Storage.get_edges_for_node(storage, current_id)
+      |> Enum.flat_map(fn edge ->
+        cond do
+          edge.from_node_id == current_id -> [edge.to_node_id]
+          edge.to_node_id == current_id -> [edge.from_node_id]
+          true -> []
+        end
+      end)
+      |> Enum.reject(&MapSet.member?(visited, &1))
+
+      new_queue_items = Enum.map(neighbors, fn neighbor_id ->
+        {neighbor_id, [neighbor_id | path]}
+      end)
+
+      new_visited = Enum.reduce(neighbors, visited, &MapSet.put(&2, &1))
+      new_queue = rest ++ new_queue_items
+
+      bfs_search(storage, new_queue, new_visited, target)
+    end
   end
 
   @doc """

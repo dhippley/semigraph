@@ -31,8 +31,8 @@ defmodule SemigraphWeb.ConnCase do
     end
   end
 
-  setup tags do
-    Semigraph.DataCase.setup_sandbox(tags)
+  setup _tags do
+    # Semigraph.DataCase.setup_sandbox(tags)  # Commented out - no database
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end
