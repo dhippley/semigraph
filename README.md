@@ -27,6 +27,29 @@ Semigraph is a graph-native Elixir library designed for low-latency agent memory
 
 ---
 
+## 🧠 Performance Breakdown by Layer
+
+| Layer                     | Performance Notes                                 | Bottlenecks                                         | Optimizations                                     |
+| ------------------------- | ------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------- |
+| **Storage (ETS)**         | Fast, concurrent, lock-free, great for graph data | Not distributed, in-RAM only, slow with large scans | Keep graph normalized and use indexes             |
+| **Algebra (Nx/EXLA)**     | Near-native matrix ops, can use GPU               | Dense matrices become expensive fast                | Use sparse matrices + semirings                   |
+| **Query Engine (custom)** | Fast if simple traversal (BFS, DFS) or rule-based | No JIT/planner like Neo4j                           | Can precompile AST → op tree, use pattern caching |
+| **Semiring Math**         | Flexible and expressive                           | User-defined ops may slow down                      | Compile-time specialization of common semirings   |
+| **Parallelism**           | BEAM excels at concurrent graph ops               | Coordination costs for large graphs                 | Partition graph state across processes            |
+
+---
+
+## 🛠️ Performance Considerations in Elixir
+
+Use ETS smartly: maintain reverse indexes, partition by type, use compressed keys.
+Sparse matrices: especially for large graphs with few connections.
+Semiring pre-compilation: avoid dynamic dispatch in tight loops.
+Native Nx + EXLA: offload algebraic ops to TensorFlow/XLA.
+Supervised graph shards: keep node/edge buckets in GenServers for parallelism.
+Query caching: AST → op tree → result caching for repeat queries.
+
+---
+
 ## 🧠 Roadmap
 
 ### Phase 1: Graph Engine MVP
