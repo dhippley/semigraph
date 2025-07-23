@@ -112,10 +112,28 @@ defmodule Semigraph.Semiring do
   Matrix multiplication using the semiring operations.
   """
   @spec matrix_multiply(t(), Nx.Tensor.t(), Nx.Tensor.t()) :: Nx.Tensor.t()
-  def matrix_multiply(_semiring, _matrix_a, _matrix_b) do
-    # TODO: Implement generalized matrix multiplication with semiring ops
-    # This requires custom Nx operations or defn compilation
-    :not_implemented
+  def matrix_multiply(semiring, matrix_a, matrix_b) do
+    case semiring.name do
+      "Boolean" ->
+        # Use Nx boolean operations for efficiency
+        boolean_matrix_multiply(matrix_a, matrix_b)
+
+      "Tropical" ->
+        # Min-plus semiring
+        tropical_matrix_multiply(matrix_a, matrix_b)
+
+      "Counting" ->
+        # Standard arithmetic matrix multiplication
+        Nx.dot(matrix_a, matrix_b)
+
+      "Probability" ->
+        # Custom probability semiring multiplication
+        probability_matrix_multiply(semiring, matrix_a, matrix_b)
+
+      _ ->
+        # Generic semiring multiplication (slower but works for custom semirings)
+        generic_matrix_multiply(semiring, matrix_a, matrix_b)
+    end
   end
 
   @doc """
@@ -125,5 +143,117 @@ defmodule Semigraph.Semiring do
   def validate(_semiring, _test_values \\ [0, 1, 2]) do
     # TODO: Property-based testing of semiring axioms
     :not_implemented
+  end
+
+  # Private helper functions for optimized matrix operations
+
+  defp boolean_matrix_multiply(matrix_a, matrix_b) do
+    # For boolean semiring: (A ⊗ B)[i,j] = OR_k(A[i,k] AND B[k,j])
+    {m, k1} = Nx.shape(matrix_a)
+    {k2, n} = Nx.shape(matrix_b)
+
+    if k1 != k2 do
+      raise ArgumentError, "incompatible matrix dimensions for multiplication"
+    end
+
+    # Expand dimensions for broadcasting
+    a_expanded = Nx.new_axis(matrix_a, 2)  # Shape: {m, k, 1}
+    b_expanded = Nx.new_axis(matrix_b, 0)  # Shape: {1, k, n}
+
+    # Element-wise AND, then OR along the k dimension
+    pairwise_and = Nx.logical_and(a_expanded, b_expanded)  # Shape: {m, k, n}
+    Nx.any(pairwise_and, axes: [1])  # Shape: {m, n}
+  end
+
+  defp tropical_matrix_multiply(matrix_a, matrix_b) do
+    # For tropical semiring: (A ⊗ B)[i,j] = min_k(A[i,k] + B[k,j])
+    {m, k1} = Nx.shape(matrix_a)
+    {k2, n} = Nx.shape(matrix_b)
+
+    if k1 != k2 do
+      raise ArgumentError, "incompatible matrix dimensions for multiplication"
+    end
+
+    # Handle infinity values by replacing with large numbers for computation
+    a_clean = replace_infinity(matrix_a)
+    b_clean = replace_infinity(matrix_b)
+
+    # Broadcast and compute all pairwise sums, then take minimum
+    a_expanded = Nx.new_axis(a_clean, 2)  # Shape: {m, k, 1}
+    b_expanded = Nx.new_axis(b_clean, 0)  # Shape: {1, k, n}
+
+    pairwise_sums = Nx.add(a_expanded, b_expanded)  # Shape: {m, k, n}
+    result = Nx.reduce_min(pairwise_sums, axes: [1])  # Shape: {m, n}
+
+    # Convert back large numbers to infinity
+    restore_infinity(result)
+  end
+
+  defp probability_matrix_multiply(semiring, matrix_a, matrix_b) do
+    # Use generic multiplication for probability semiring
+    generic_matrix_multiply(semiring, matrix_a, matrix_b)
+  end
+
+  defp generic_matrix_multiply(semiring, matrix_a, matrix_b) do
+    # Generic but slower implementation for custom semirings
+    {m, k1} = Nx.shape(matrix_a)
+    {k2, n} = Nx.shape(matrix_b)
+
+    if k1 != k2 do
+      raise ArgumentError, "incompatible matrix dimensions for multiplication"
+    end
+
+    # Convert to nested lists for easier manipulation
+    a_list = Nx.to_list(matrix_a)
+    b_list = Nx.to_list(matrix_b)
+
+    result =
+      for i <- 0..(m-1) do
+        for j <- 0..(n-1) do
+          # Compute dot product with semiring operations
+          row_i = Enum.at(a_list, i)
+          col_j = for k <- 0..(k1-1), do: Enum.at(Enum.at(b_list, k), j)
+
+          # Semiring matrix multiplication: sum of products becomes
+          # semiring_add of semiring_multiply
+          pairs = Enum.zip(row_i, col_j)
+
+          Enum.reduce(pairs, semiring.zero, fn {a, b}, acc ->
+            product = semiring.times.(a, b)
+            semiring.plus.(acc, product)
+          end)
+        end
+      end
+
+    Nx.tensor(result)
+  end
+
+  defp replace_infinity(tensor) do
+    # Replace :infinity with a large number for computation
+    large_number = 1.0e10
+
+    tensor
+    |> Nx.to_flat_list()
+    |> Enum.map(fn
+      :infinity -> large_number
+      val -> val
+    end)
+    |> Nx.tensor()
+    |> Nx.reshape(Nx.shape(tensor))
+  end
+
+  defp restore_infinity(tensor) do
+    # Convert large numbers back to :infinity
+    large_number = 1.0e10
+    threshold = large_number * 0.9  # Allow for some numerical error
+
+    tensor
+    |> Nx.to_flat_list()
+    |> Enum.map(fn
+      val when val > threshold -> :infinity
+      val -> val
+    end)
+    |> Nx.tensor()
+    |> Nx.reshape(Nx.shape(tensor))
   end
 end
