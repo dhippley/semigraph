@@ -9,7 +9,7 @@ defmodule Semigraph.Application do
   def start(_type, _args) do
     children = [
       SemigraphWeb.Telemetry,
-      Semigraph.Repo,
+      # Semigraph.Repo,  # Commented out for now - we're not using database
       {DNSCluster, query: Application.get_env(:semigraph, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Semigraph.PubSub},
       # Start the Finch HTTP client for sending emails
