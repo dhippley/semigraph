@@ -52,17 +52,26 @@ Semigraph is a graph-native Elixir library designed for low-latency agent memory
 
 ## 🧠 Roadmap
 
-### Phase 1: Graph Engine MVP
-- [ ] `Graph.new/0`, `add_node/2`, `add_edge/3`, `get_node/1`, `delete/1`
-- [ ] In-memory ETS-based storage
-- [ ] Basic label + property indexing
-- [ ] Simple path/query traversal
+### Phase 1: Graph Engine MVP ✅
+- [x] `Graph.new/0`, `add_node/2`, `add_edge/3`, `get_node/1`, `delete/1`
+- [x] In-memory ETS-based storage
+- [x] Basic label + property indexing
+- [x] Simple path/query traversal
 
 ### Phase 2: Matrix Algebra Layer
-- [ ] Matrix representation (dense + sparse)
-- [ ] Matrix multiplication, transpose, dot product
-- [ ] Nx/EXLA backend for acceleration
-- [ ] Define custom `Semiring` structs
+- [x] Matrix representation (dense + sparse)
+- [x] Matrix multiplication, transpose, dot product
+- [x] Nx/EXLA backend for acceleration
+- [x] Define custom `Semiring` structs
+- [x] COO (Coordinate) format for sparse matrices
+- [x] Bidirectional sparse ↔ dense conversion
+- [x] Semiring-based matrix operations
+
+#### 🔄 Phase 2 Future Optimizations
+- [ ] **CSR Format**: For faster row operations
+- [ ] **Native Sparse Multiplication**: Avoid dense conversion
+- [ ] **Sparse Semiring Operations**: Direct sparse matrix algebra
+- [ ] **Memory-Mapped Storage**: For very large sparse matrices
 
 ### Phase 3: Query Engine
 - [ ] Design Cypher-lite AST
@@ -116,25 +125,11 @@ Semigraph is a graph-native Elixir library designed for low-latency agent memory
 
 1. ✅ Define `Node`, `Edge`, `Graph` structs
 2. ✅ Scaffold ETS-backed `GraphDB.Storage` module
-3. ⏳ Design matrix struct for Nx algebra (dense & sparse)
-4. ⏳ Implement basic semiring multiplication
+3. ✅ Design matrix struct for Nx algebra (dense & sparse)
+4. ✅ Implement basic semiring multiplication
 5. ⏳ Write `MATCH` interpreter for simple patterns
 6. ⏳ Benchmark traversal and algebra ops on toy graphs
 
----
-
-## 📦 Planned Modules
-
-```elixir
-Semigraph.Graph
-Semigraph.Node
-Semigraph.Edge
-Semigraph.Storage   # ETS + indexing
-Semigraph.Matrix    # Nx abstraction
-Semigraph.Semiring  # Algebra kernels
-Semigraph.Query     # Cypher-lite + DSL
-Semigraph.Agent     # Optional agentic extensions
-```
 ---
 
 ## 📚 Inspirations
