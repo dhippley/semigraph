@@ -151,4 +151,22 @@ defmodule Semigraph.Graph do
       end)
     end)
   end
+
+  @doc """
+  Gets all outgoing edges from a node.
+  """
+  @spec get_outgoing_edges(t(), Node.id()) :: [Edge.t()]
+  def get_outgoing_edges(%__MODULE__{storage: storage}, node_id) do
+    Storage.get_edges_for_node(storage, node_id)
+    |> Enum.filter(&(&1.from_node_id == node_id))
+  end
+
+  @doc """
+  Gets all incoming edges to a node.
+  """
+  @spec get_incoming_edges(t(), Node.id()) :: [Edge.t()]
+  def get_incoming_edges(%__MODULE__{storage: storage}, node_id) do
+    Storage.get_edges_for_node(storage, node_id)
+    |> Enum.filter(&(&1.to_node_id == node_id))
+  end
 end
