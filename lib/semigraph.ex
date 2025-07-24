@@ -28,7 +28,7 @@ defmodule Semigraph do
   - **Agent Extensions**: Specialized memory and planning operations
   """
 
-  alias Semigraph.{Graph, Node, Edge, Query, Storage, Matrix, Semiring, Agent}
+  alias Semigraph.{Graph, Node, Edge, Query}
 
   # Convenience delegations to main modules
   defdelegate new_graph(name, opts \\ []), to: Graph, as: :new

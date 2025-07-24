@@ -6,7 +6,7 @@ defmodule Semigraph.Agent do
   goal decomposition, and knowledge representation.
   """
 
-  alias Semigraph.{Graph, Node, Edge, Query}
+  alias Semigraph.Graph
 
   @type memory_type :: :episodic | :semantic | :procedural
   @type goal_status :: :pending | :active | :completed | :failed

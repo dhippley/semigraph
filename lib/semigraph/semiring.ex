@@ -149,8 +149,8 @@ defmodule Semigraph.Semiring do
 
   defp boolean_matrix_multiply(matrix_a, matrix_b) do
     # For boolean semiring: (A ⊗ B)[i,j] = OR_k(A[i,k] AND B[k,j])
-    {m, k1} = Nx.shape(matrix_a)
-    {k2, n} = Nx.shape(matrix_b)
+    {_m, k1} = Nx.shape(matrix_a)
+    {k2, _n} = Nx.shape(matrix_b)
 
     if k1 != k2 do
       raise ArgumentError, "incompatible matrix dimensions for multiplication"
@@ -167,8 +167,8 @@ defmodule Semigraph.Semiring do
 
   defp tropical_matrix_multiply(matrix_a, matrix_b) do
     # For tropical semiring: (A ⊗ B)[i,j] = min_k(A[i,k] + B[k,j])
-    {m, k1} = Nx.shape(matrix_a)
-    {k2, n} = Nx.shape(matrix_b)
+    {_m, k1} = Nx.shape(matrix_a)
+    {k2, _n} = Nx.shape(matrix_b)
 
     if k1 != k2 do
       raise ArgumentError, "incompatible matrix dimensions for multiplication"
