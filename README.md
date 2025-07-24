@@ -73,11 +73,36 @@ Semigraph is a graph-native Elixir library designed for low-latency agent memory
 - [ ] **Sparse Semiring Operations**: Direct sparse matrix algebra
 - [ ] **Memory-Mapped Storage**: For very large sparse matrices
 
-### Phase 3: Query Engine
-- [ ] Design Cypher-lite AST
-- [ ] Pattern matching queries (MATCH, RETURN, WHERE)
-- [ ] Graph query interpreter and optimizer
-- [ ] Optional DSL fallback
+### Phase 3: Query Engine ⏳
+- [x] Design Cypher-lite AST
+- [x] Basic pattern matching queries (MATCH, RETURN, WHERE)
+- [x] Graph query interpreter and basic DSL
+- [ ] **Enhanced Edge Pattern Parsing** (3-week implementation)
+  - [ ] **Phase 3.1**: Enhanced tokenization for compound edge patterns (`]-&gt;`, `&lt;-[`)
+  - [ ] **Phase 3.2**: Refactored edge pattern parser with proper state management
+  - [ ] **Phase 3.3**: Advanced pattern support (multi-edge, variable-length, properties)
+- [ ] Query optimizer and execution planner
+- [ ] Performance benchmarking and optimization
+
+#### 🔄 Phase 3 Edge Pattern Parser Details
+**Current Limitations**: Basic parser struggles with compound token sequences like `(a)-[:KNOWS]->(b)`
+
+**Phase 3.1 - Enhanced Tokenization** (Week 1)
+- [ ] Recognize compound edge patterns: `-[`, `]->`, `<-[`, `]-`
+- [ ] Add new token types for edge sequences
+- [ ] Improve `split_special_chars/1` for better token boundary detection
+
+**Phase 3.2 - Refactored Parser** (Week 2)  
+- [ ] Implement multi-step edge parsing with proper state management
+- [ ] Add lookahead system for complex token sequences
+- [ ] Support bidirectional edges: `(a)<-[:TYPE]->(b)`
+- [ ] Enhanced error handling with position tracking
+
+**Phase 3.3 - Advanced Patterns** (Week 3)
+- [ ] Multiple edge chains: `(a)-[:KNOWS]->(b)-[:WORKS_AT]->(c)`
+- [ ] Variable-length paths: `(a)-[:KNOWS*1..3]->(b)`
+- [ ] Edge property filtering: `(a)-[:KNOWS {since: 2020}]->(b)`
+- [ ] Optional patterns and path matching
 
 ### Phase 4: Agentic Extensions
 - [ ] Graph-backed agent memory (episodic/semantic)
