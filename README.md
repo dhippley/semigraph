@@ -39,7 +39,33 @@ Semigraph is a graph-native Elixir library designed for low-latency agent memory
 
 ---
 
-## 🛠️ Performance Considerations in Elixir
+## � Examples & Learning Resources
+
+Semigraph includes comprehensive examples demonstrating core concepts and real-world applications:
+
+### 🚀 Basic Examples (`examples/basic/`)
+- **`getting_started.exs`** - Complete introduction with graph creation, queries, and traversal
+- **`graph_crud.exs`** - Detailed CRUD operations with error handling and validation  
+- **`simple_queries.exs`** - Query patterns, filtering, and DSL usage guide
+- **`matrix_operations.exs`** - Matrix algebra, semirings, and graph analysis
+
+### 🌐 Domain Examples (`examples/domains/`)
+- **`social_network.exs`** - Social media platform with friend recommendations and community detection
+- **`knowledge_graph.exs`** - Entity relationships and semantic reasoning
+- **`fraud_detection.exs`** - Transaction analysis and anomaly detection
+
+### 🤖 Agent Examples (`examples/agents/`)
+- **`episodic_memory.exs`** - AI agent memory patterns with semantic relationships
+- **`planning_and_decisions.exs`** - Goal decomposition, risk assessment, and multi-agent coordination
+
+All examples include `Mix.install` setup and can be run standalone:
+```bash
+elixir examples/basic/getting_started.exs
+```
+
+---
+
+## �🛠️ Performance Considerations in Elixir
 
 - Use ETS smartly: maintain reverse indexes, partition by type, use compressed keys.
 - Sparse matrices: especially for large graphs with few connections.
@@ -77,7 +103,7 @@ Semigraph is a graph-native Elixir library designed for low-latency agent memory
 - [x] Design Cypher-lite AST
 - [x] Basic pattern matching queries (MATCH, RETURN, WHERE)
 - [x] Graph query interpreter and basic DSL
-- [ ] **Enhanced Edge Pattern Parsing** (3-week implementation)
+- [ ] **Enhanced Edge Pattern Parsing**
   - [ ] **Phase 3.1**: Enhanced tokenization for compound edge patterns (`]-&gt;`, `&lt;-[`)
   - [ ] **Phase 3.2**: Refactored edge pattern parser with proper state management
   - [ ] **Phase 3.3**: Advanced pattern support (multi-edge, variable-length, properties)
@@ -87,34 +113,53 @@ Semigraph is a graph-native Elixir library designed for low-latency agent memory
 #### 🔄 Phase 3 Edge Pattern Parser Details
 **Current Limitations**: Basic parser struggles with compound token sequences like `(a)-[:KNOWS]->(b)`
 
-**Phase 3.1 - Enhanced Tokenization** (Week 1)
+**Phase 3.1 - Enhanced Tokenization**
 - [ ] Recognize compound edge patterns: `-[`, `]->`, `<-[`, `]-`
 - [ ] Add new token types for edge sequences
 - [ ] Improve `split_special_chars/1` for better token boundary detection
 
-**Phase 3.2 - Refactored Parser** (Week 2)  
+**Phase 3.2 - Refactored Parser**
 - [ ] Implement multi-step edge parsing with proper state management
 - [ ] Add lookahead system for complex token sequences
 - [ ] Support bidirectional edges: `(a)<-[:TYPE]->(b)`
 - [ ] Enhanced error handling with position tracking
 
-**Phase 3.3 - Advanced Patterns** (Week 3)
+**Phase 3.3 - Advanced Patterns**
 - [ ] Multiple edge chains: `(a)-[:KNOWS]->(b)-[:WORKS_AT]->(c)`
 - [ ] Variable-length paths: `(a)-[:KNOWS*1..3]->(b)`
 - [ ] Edge property filtering: `(a)-[:KNOWS {since: 2020}]->(b)`
 - [ ] Optional patterns and path matching
 
-### Phase 4: Agentic Extensions
-- [ ] Graph-backed agent memory (episodic/semantic)
-- [ ] Memory pruning and forgetting strategies
-- [ ] Graph state diffing/versioning
-- [ ] LLM planning support with goal decomposition over graphs
+### Phase 4: Samples, Demos & Benchmarking
+- [x] **Core Examples & Use Cases**
+  - [x] Basic usage examples (getting started, CRUD, queries)
+  - [x] Domain-specific examples (social networks, knowledge graphs, fraud detection) 
+  - [x] Agent memory demonstrations and planning examples
+- [ ] **Interactive Demos**
+  - [ ] LiveView graph visualization and query playground
+  - [ ] CLI demo tool for different use cases
+  - [ ] Jupyter notebook examples and tutorials
+- [ ] **Comprehensive Benchmarking**
+  - [ ] Graph operations performance (CRUD, traversal, indexing)
+  - [ ] Query execution benchmarks (simple to complex patterns)
+  - [ ] Matrix algebra performance (sparse/dense, semiring operations)
+  - [ ] Memory usage profiling and optimization targets
+- [ ] **Performance Optimization & CI Integration**
+  - [ ] Benchmark-driven performance improvements
+  - [ ] Performance regression testing in CI
+  - [ ] Production deployment examples and best practices
 
 ### Phase 5: Persistence + Scale
 - [ ] DETS/SQLite serialization
 - [ ] Partitioned graph memory (supervised shards)
 - [ ] Live update hooks for graph events
 - [ ] Optional Phoenix/PubSub for streaming updates
+
+### Phase 6: Agentic Extensions
+- [ ] Graph-backed agent memory (episodic/semantic)
+- [ ] Memory pruning and forgetting strategies
+- [ ] Graph state diffing/versioning
+- [ ] LLM planning support with goal decomposition over graphs
 
 ---
 
