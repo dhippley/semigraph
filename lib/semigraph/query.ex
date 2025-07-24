@@ -1,113 +1,219 @@
 defmodule Semigraph.Query do
   @moduledoc """
-  Query engine with custom DSL for graph traversal and pattern matching.
+  Main query interface for Semigraph.
 
-  Provides a Cypher-inspired but Elixir-native DSL for querying graphs,
-  with compilation to either ETS operations or matrix algebra.
+  Provides both a Cypher-like string query interface and an Elixir DSL
+  for building and executing graph queries.
+
+  ## Examples
+
+  ### String Queries (Cypher-like)
+
+      iex> query = "MATCH (n:Person) WHERE n.age > 25 RETURN n.name"
+      iex> Semigraph.Query.execute(graph, query)
+      {:ok, %{rows: [%{"n.name" => "Alice"}, %{"n.name" => "Bob"}], ...}}
+
+  ### DSL Queries
+
+      iex> import Semigraph.Query
+      iex> result = graph
+      ...> |> match([{:n, :Person}])
+      ...> |> where(n.age > 25)
+      ...> |> return([:n.name])
+      ...> |> execute()
+      {:ok, %{rows: [...], ...}}
   """
 
-  alias Semigraph.{Graph, Node, Storage}
+  alias Semigraph.{Graph, Storage, Node}
+  alias Semigraph.Query.{AST, Parser, Executor}
 
-  @type query_ast :: term()
-  @type query_result :: [map()]
+  # QueryBuilder struct for DSL
 
-  defmodule AST do
-    @moduledoc """
-    Abstract Syntax Tree nodes for the query language.
-    """
+  defmodule QueryBuilder do
+    @moduledoc false
 
-    defmodule Match do
-      defstruct [:pattern, :where, :optional]
-    end
+    defstruct [:graph, :ast]
 
-    defmodule Return do
-      defstruct [:expressions, :distinct, :order_by, :limit]
-    end
-
-    defmodule Pattern do
-      defstruct [:nodes, :edges, :paths]
-    end
-
-    defmodule NodePattern do
-      defstruct [:variable, :labels, :properties]
-    end
-
-    defmodule EdgePattern do
-      defstruct [:variable, :from, :to, :type, :properties, :direction]
-    end
+    @type t :: %__MODULE__{
+      graph: Graph.t(),
+      ast: AST.t()
+    }
   end
 
   @doc """
-  Parses a query string into an AST.
+  Executes a query against a graph.
 
-  Example query syntax:
-  ```
-  MATCH (n:Person {name: "Alice"})-[:KNOWS]->(m:Person)
-  WHERE m.age > 25
-  RETURN n.name, m.name, m.age
-  ```
+  Accepts either a query string or an AST structure.
   """
-  @spec parse(String.t()) :: {:ok, query_ast()} | {:error, term()}
-  def parse(_query_string) do
-    # TODO: Implement parser for custom DSL
-    # Consider using nimble_parsec or writing recursive descent parser
-    :not_implemented
-  end
-
-  @doc """
-  Compiles AST to executable query plan.
-  """
-  @spec compile(query_ast()) :: {:ok, (Graph.t() -> query_result())} | {:error, term()}
-  def compile(_ast) do
-    # TODO: Optimize AST and compile to execution plan
-    # - Analyze patterns for index usage
-    # - Choose between ETS traversal vs matrix operations
-    # - Generate optimized execution function
-    :not_implemented
-  end
-
-  @doc """
-  Executes a compiled query against a graph.
-  """
-  @spec execute(Graph.t(), query_ast() | (Graph.t() -> query_result())) :: {:ok, query_result()} | {:error, term()}
-  def execute(_graph, _query_or_plan) do
-    # TODO: Execute query plan and return results
-    :not_implemented
-  end
-
-  @doc """
-  Convenience function to parse, compile, and execute in one call.
-  """
-  @spec run(Graph.t(), String.t()) :: {:ok, query_result()} | {:error, term()}
-  def run(graph, query_string) do
-    with {:ok, ast} <- parse(query_string),
-         {:ok, plan} <- compile(ast),
-         {:ok, result} <- execute(graph, plan) do
-      {:ok, result}
+  @spec execute(Graph.t(), String.t() | AST.t()) :: {:ok, Executor.execution_result()} | {:error, term()}
+  def execute(%Graph{} = graph, query_string) when is_binary(query_string) do
+    with {:ok, ast} <- Parser.parse(query_string) do
+      Executor.execute(ast, graph)
     end
   end
 
-  # DSL Macros for compile-time query building
+  def execute(%Graph{} = graph, %AST{} = ast) do
+    Executor.execute(ast, graph)
+  end
 
   @doc """
-  Macro for building match patterns at compile time.
-
-  Example:
-  ```elixir
-  import Semigraph.Query
-
-  query = match (n:Person {name: var}) -> (m:Person) do
-    where n.age > 25
-    return [n.name, m.name]
-  end
-  ```
+  Convenience function to parse and execute a query string.
   """
-  defmacro match(_pattern, _opts \\ [], _do_block) do
-    # TODO: Implement macro for compile-time query building
-    quote do
-      :not_implemented
-    end
+  @spec run(Graph.t(), String.t()) :: {:ok, Executor.execution_result()} | {:error, term()}
+  def run(%Graph{} = graph, query_string) when is_binary(query_string) do
+    execute(graph, query_string)
   end
+
+  @doc """
+  Starts building a query with a MATCH clause.
+
+  ## Examples
+
+      iex> match(graph, [{:n, :Person}])
+      %QueryBuilder{...}
+
+      iex> match(graph, [{:a, :Person}, {:r, :KNOWS}, {:b, :Person}])
+      %QueryBuilder{...}
+  """
+  def match(%Graph{} = graph, patterns) when is_list(patterns) do
+    %QueryBuilder{
+      graph: graph,
+      ast: AST.new() |> add_patterns_to_ast(patterns)
+    }
+  end
+
+  @doc """
+  Adds WHERE conditions to a query.
+  """
+  def where(%QueryBuilder{ast: ast} = builder, condition) do
+    # TODO: Convert Elixir expressions to AST conditions
+    # For now, accept simple conditions
+    %{builder | ast: AST.add_where_condition(ast, condition)}
+  end
+
+  @doc """
+  Adds RETURN items to a query.
+  """
+  def return(%QueryBuilder{ast: ast} = builder, items) when is_list(items) do
+    return_items = Enum.map(items, &convert_to_return_item/1)
+    %{builder | ast: AST.set_return_items(ast, return_items)}
+  end
+
+  @doc """
+  Sets LIMIT on a query.
+  """
+  def limit(%QueryBuilder{ast: ast} = builder, count) when is_integer(count) and count > 0 do
+    %{builder | ast: AST.set_limit(ast, count)}
+  end
+
+  @doc """
+  Sets SKIP on a query.
+  """
+  def skip(%QueryBuilder{ast: ast} = builder, count) when is_integer(count) and count >= 0 do
+    %{builder | ast: AST.set_skip(ast, count)}
+  end
+
+  @doc """
+  Adds ORDER BY to a query.
+  """
+  def order_by(%QueryBuilder{ast: ast} = builder, variable, direction \\ :asc)
+      when direction in [:asc, :desc] do
+    %{builder | ast: AST.add_order_by(ast, to_string(variable), direction)}
+  end
+
+  @doc """
+  Executes a built query.
+  """
+  def execute(%QueryBuilder{graph: graph, ast: ast}) do
+    Executor.execute(ast, graph)
+  end
+
+  # Private helper functions
+
+  defp add_patterns_to_ast(ast, patterns) do
+    # Convert simple patterns to proper AST patterns
+    # For now, handle basic node patterns
+    path_patterns = convert_patterns_to_ast(patterns)
+    Enum.reduce(path_patterns, ast, &AST.add_match_pattern(&2, &1))
+  end
+
+  defp convert_patterns_to_ast(patterns) do
+    # Group patterns into paths (nodes and edges)
+    [convert_simple_pattern(patterns)]
+  end
+
+  defp convert_simple_pattern(patterns) do
+    {nodes, edges} = parse_pattern_elements(patterns, [], [])
+    %{nodes: nodes, edges: edges}
+  end
+
+  defp parse_pattern_elements([], nodes, edges), do: {Enum.reverse(nodes), Enum.reverse(edges)}
+
+  defp parse_pattern_elements([{var, label} | rest], nodes, edges) when is_atom(var) and is_atom(label) do
+    node_pattern = %{
+      variable: to_string(var),
+      labels: [to_string(label)],
+      properties: %{}
+    }
+    parse_pattern_elements(rest, [node_pattern | nodes], edges)
+  end
+
+  defp parse_pattern_elements([{var, label, props} | rest], nodes, edges)
+      when is_atom(var) and is_atom(label) and is_map(props) do
+    node_pattern = %{
+      variable: to_string(var),
+      labels: [to_string(label)],
+      properties: props
+    }
+    parse_pattern_elements(rest, [node_pattern | nodes], edges)
+  end
+
+  defp parse_pattern_elements([{:-, rel_type} | rest], nodes, edges) when is_atom(rel_type) do
+    edge_pattern = %{
+      variable: nil,
+      relationship_type: to_string(rel_type),
+      properties: %{},
+      direction: :outgoing
+    }
+    parse_pattern_elements(rest, nodes, [edge_pattern | edges])
+  end
+
+  defp parse_pattern_elements([{:-, var, rel_type} | rest], nodes, edges)
+      when is_atom(var) and is_atom(rel_type) do
+    edge_pattern = %{
+      variable: to_string(var),
+      relationship_type: to_string(rel_type),
+      properties: %{},
+      direction: :outgoing
+    }
+    parse_pattern_elements(rest, nodes, [edge_pattern | edges])
+  end
+
+  defp parse_pattern_elements([pattern | _rest], _nodes, _edges) do
+    raise ArgumentError, "Unsupported pattern format: #{inspect(pattern)}"
+  end
+
+  defp convert_to_return_item(item) when is_atom(item) do
+    %{type: :variable, variable: to_string(item)}
+  end
+
+  defp convert_to_return_item({var, prop}) when is_atom(var) and is_atom(prop) do
+    %{type: :property, variable: to_string(var), property: to_string(prop)}
+  end
+
+  defp convert_to_return_item({{func, var}}) when is_atom(func) and is_atom(var) do
+    %{type: :aggregation, function: func, variable: to_string(var), property: nil}
+  end
+
+  defp convert_to_return_item({{func, var, prop}}) when is_atom(func) and is_atom(var) and is_atom(prop) do
+    %{type: :aggregation, function: func, variable: to_string(var), property: to_string(prop)}
+  end
+
+  defp convert_to_return_item(item) do
+    raise ArgumentError, "Unsupported return item format: #{inspect(item)}"
+  end
+
+  # Legacy functions for backward compatibility
 
   @doc """
   Simple path traversal without full query parsing.
@@ -216,14 +322,5 @@ defmodule Semigraph.Query do
 
       bfs_search(storage, new_queue, new_visited, target)
     end
-  end
-
-  @doc """
-  Pattern matching for subgraph structures.
-  """
-  @spec match_pattern(Graph.t(), term()) :: [map()]
-  def match_pattern(_graph, _pattern) do
-    # TODO: Find all subgraphs matching a given pattern
-    :not_implemented
   end
 end
