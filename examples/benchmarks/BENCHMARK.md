@@ -4,14 +4,46 @@ This directory contains comprehensive performance benchmarks for all major Semig
 
 ## Benchmark Overview
 
-### 📊 Performance Summary
+### � Simple Benchmark
+**Purpose**: Baseline operations for Elixir/ETS performance
 
-| Benchmark | Purpose | Key Metrics |
-|-----------|---------|-------------|
-| **Simple** | Baseline operations | Basic ops: ~2M ops/sec, ETS: ~2M ops/sec, Process: ~2M ops/sec |
-| **Direct** | Core graph operations | Node insertion: ~17k ops/sec, Edge insertion: ~127k ops/sec |
-| **Comprehensive** | Real-world scenarios | Large graphs: 5k nodes in ~815ms, Query ops: ~400k ops/sec |
-| **Matrix** | Linear algebra | Small multiply: ~1ms, Large multiply: ~370ms, Scaling: O(n²·³) |
+| Operation | Performance | Ops/Second |
+|-----------|-------------|------------|
+| List map+sum (10k items) | 0.42ms | 23M ops/sec |
+| ETS insert (1k records) | 0.48ms | 2M ops/sec |
+| ETS lookup (1k records) | 0.41ms | 2.4M ops/sec |
+| Process spawn (100) | 0.06ms | 1.7M ops/sec |
+| Process messaging (100) | 0.04ms | 2.8M ops/sec |
+
+### 🗃️ Direct Benchmark  
+**Purpose**: Core Semigraph operations (CRUD, queries)
+
+| Operation | Performance | Ops/Second |
+|-----------|-------------|------------|
+| Graph creation | 5.35ms | - |
+| Add 1k nodes | 58.05ms | 17.2k ops/sec |
+| Add 500 edges | 3.94ms | 126.8k ops/sec |
+| Single node lookup | 4μs | 250k ops/sec |
+| Get outgoing edges | 6μs | 166.7k ops/sec |
+| Get incoming edges | 3μs | 333.3k ops/sec |
+
+### 📈 Comprehensive Benchmark
+**Purpose**: Real-world scenarios and scalability testing
+
+| Graph Size | Creation Time | Query Performance | Memory Usage |
+|------------|---------------|-------------------|--------------|
+| Small (100 nodes, 50 edges) | 6.11ms | 666.7k ops/sec | 57.8MB |
+| Medium (1k nodes, 500 edges) | 42.9ms | 190.5k ops/sec | 62.1MB |
+| Large (5k nodes, 2k edges) | 815.16ms | 250k ops/sec | 84.8MB |
+
+### 🧮 Matrix Benchmark
+**Purpose**: Matrix algebra and semiring operations
+
+| Graph Size | Matrix Creation | Multiplication | Power Operations | Format Conversion |
+|------------|-----------------|----------------|------------------|-------------------|
+| Tiny (10 nodes) | 79μs | 1.0ms | 1.03ms | 4.26ms |
+| Small (50 nodes) | 465μs | 108.16ms | 49.72ms | 879μs |
+| Medium (100 nodes) | 548μs | 370.35ms | 366.64ms | 1.56ms |
 
 ## Running Benchmarks
 
