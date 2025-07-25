@@ -65,6 +65,19 @@ elixir examples/basic/getting_started.exs
 
 ---
 
+## 📊 Performance Benchmarks
+
+Semigraph includes comprehensive performance benchmarks covering all major components:
+
+- **Graph Operations**: CRUD operations, indexing, and traversal performance
+- **Matrix Algebra**: Sparse/dense matrix operations, multiplication, and scaling analysis  
+- **Memory Profiling**: Memory usage patterns across different graph sizes
+- **Baseline Performance**: ETS and Elixir operation benchmarks for comparison
+
+📊 **[View detailed benchmark results and analysis](examples/benchmarks/BENCHMARK.md)**
+
+---
+
 ## �🛠️ Performance Considerations in Elixir
 
 - Use ETS smartly: maintain reverse indexes, partition by type, use compressed keys.
@@ -130,7 +143,7 @@ elixir examples/basic/getting_started.exs
 - [ ] Edge property filtering: `(a)-[:KNOWS {since: 2020}]->(b)`
 - [ ] Optional patterns and path matching
 
-### Phase 4: Samples, Demos & Benchmarking
+### Phase 4: Samples, Demos & Benchmarking ✅
 - [x] **Core Examples & Use Cases**
   - [x] Basic usage examples (getting started, CRUD, queries)
   - [x] Domain-specific examples (social networks, knowledge graphs, fraud detection) 
@@ -139,11 +152,11 @@ elixir examples/basic/getting_started.exs
   - [ ] LiveView graph visualization and query playground
   - [ ] CLI demo tool for different use cases
   - [ ] Jupyter notebook examples and tutorials
-- [ ] **Comprehensive Benchmarking**
-  - [ ] Graph operations performance (CRUD, traversal, indexing)
+- [x] **Comprehensive Benchmarking**
+  - [x] Graph operations performance (CRUD, traversal, indexing)
   - [ ] Query execution benchmarks (simple to complex patterns)
-  - [ ] Matrix algebra performance (sparse/dense, semiring operations)
-  - [ ] Memory usage profiling and optimization targets
+  - [x] Matrix algebra performance (sparse/dense, semiring operations, scaling tests)
+  - [x] Memory usage profiling and optimization targets
 - [ ] **Performance Optimization & CI Integration**
   - [ ] Benchmark-driven performance improvements
   - [ ] Performance regression testing in CI
